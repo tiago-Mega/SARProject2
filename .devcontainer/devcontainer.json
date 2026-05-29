@@ -47,7 +47,7 @@
 	},
 
 	// Run services needed for a good dev experience
-	"initializeCommand": "echo 'Initializing SAR Project DevContainer for 2026...'",
+	"initializeCommand": "echo 'Initializing SAR Project DevContainer for 2026...'"
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
