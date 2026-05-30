@@ -15,16 +15,15 @@ class SocketService {
    */
   public init(io: Server): void {
     this.io = io;
-    
-    // JWT authentication for socket.io
+
+    // JWT authentication middleware for socket.io
     io.use((socket: Socket, next) => {
-      // Check for token in query or auth object (supporting both methods)
       const authData = socket.handshake.auth as Record<string, unknown> | undefined;
       const queryToken = socket.handshake.query?.token;
       const token =
         (typeof queryToken === 'string' ? queryToken : undefined) ||
         (typeof authData?.token === 'string' ? authData.token : undefined);
-        
+
       if (token) {
         jwt.verify(token, config.jwtSecret, (err: jwt.VerifyErrors | null, decoded: unknown) => {
           if (err) {
@@ -54,44 +53,24 @@ class SocketService {
     this.io.on('connection', (socket: Socket) => {
       const username = socket.data.decoded_token.username;
       console.log(`${username} user connected`);
-      
+
       // Store client in the maps
       this.socketIDbyUsername.set(username, socket.id);
       this.usernamebySocketID.set(socket.id, username);
 
-      // Handle new user event
-      socket.on('newUser:username', (data) => {
-        console.log("newUser:username -> New user event received: ", data);
-      });
-
-      // Handle bid event
-      socket.on('send:bid', (data) => {
-        console.log("send:bid -> Received event send:bid with data = ", data);
-        // Original dummy functionality 
-      });
-
-      // Handle message event
-      socket.on('send:message', (chat) => {
-        console.log("send:message received with -> ", chat);
-      });
-
       // Handle disconnection
       socket.on('disconnect', () => {
-        console.log("User disconnected");
-        const username = this.usernamebySocketID.get(socket.id);
-        if (username) {
-          this.socketIDbyUsername.delete(username);
-        }
+        console.log(`${username} disconnected`);
+        this.socketIDbyUsername.delete(username);
         this.usernamebySocketID.delete(socket.id);
       });
     });
   }
 
   /**
-   * Start auction timer for item remaining time updates
+   * Start auction timer — decrements remainingtime every second
    */
   private startAuctionTimer(): void {
-    // Timer function to decrement remaining time 
     this.intervalId = setInterval(async () => {
       if (!this.io) return;
       try {
@@ -112,33 +91,28 @@ class SocketService {
   }
 
   /**
-   * Broadcast new item to all clients
-   * @param item The new item to broadcast
+   * Broadcast a new item to all connected clients
    */
   public broadcastNewItem(item: any): void {
     if (this.io) this.io.emit('new:item', item);
   }
 
   /**
-   * Broadcast item removal to all clients
-   * @param itemId ID of the removed item
+   * Broadcast item removal to all connected clients
    */
   public broadcastRemoveItem(itemId: string): void {
     if (this.io) this.io.emit('remove:item', { id: itemId });
   }
 
   /**
-   * Broadcast bid update to all clients
-   * @param updatedItem The item with updated bid information
+   * Broadcast a bid update to all connected clients
    */
   public broadcastBidUpdate(updatedItem: any): void {
     if (this.io) this.io.emit('item:update', updatedItem);
   }
 
   /**
-   * Broadcast user status change to all clients
-   * @param username The username of the user whose status changed
-   * @param online Whether the user is now online or offline
+   * Broadcast a user login/logout status to all connected clients
    */
   public broadcastUserStatus(username: string, online: boolean): void {
     if (this.io) this.io.emit('user:status', { username, online });

@@ -9,7 +9,6 @@ export interface IItem extends Document {
   wininguser: string;
   sold: boolean;
   owner: string;
-  id: number;
 }
 
 // Item schema definition
@@ -20,8 +19,7 @@ const ItemSchema = new Schema({
   buynow: Number,
   wininguser: String,
   sold: Boolean,
-  owner: String,
-  id: Number
+  owner: String
 });
 
 // Add index for better query performance

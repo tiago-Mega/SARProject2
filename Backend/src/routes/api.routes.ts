@@ -8,17 +8,19 @@ import { Router } from 'express';
 
 const router = Router();
 
-// Auth routes
-router.post('/authenticate',    authController.authenticate);
-router.post('/newuser',         authController.registerUser);
-router.get('/users',            authenticate, authController.getUsers);
+// Public auth routes
+router.post('/authenticate', authController.authenticate);
+router.post('/newuser',      authController.registerUser);
 
-// Item routes
-router.post('/removeitem',  authenticate, itemController.removeItem);
-router.post('/newitem',     authenticate, itemController.createItem);
-router.post('/logout',      authenticate, checkBlacklist, logout);
-router.post('/placebid',    authenticate, placeBid);
-router.get('/items',        authenticate, checkBlacklist, itemController.getItems);
+// Protected auth routes
+router.get('/users',  authenticate, checkBlacklist, authController.getUsers);
+router.post('/logout', authenticate, checkBlacklist, logout);
+
+// Protected item routes — all require valid, non-blacklisted token
+router.get('/items',       authenticate, checkBlacklist, itemController.getItems);
+router.post('/newitem',    authenticate, checkBlacklist, itemController.createItem);
+router.post('/removeitem', authenticate, checkBlacklist, itemController.removeItem);
+router.post('/placebid',   authenticate, checkBlacklist, placeBid);
 
 // Handle JWT errors
 router.use(handleJwtError);
