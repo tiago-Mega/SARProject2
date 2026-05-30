@@ -3,6 +3,7 @@ import { throwError, Observable } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpResponse, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, tap } from 'rxjs/operators';
 import { SigninService } from './signin.service';
+
 // Add any models that might be needed
 import { Item } from '../models/item';
 import { User } from '../models/user';
@@ -19,44 +20,43 @@ export class AuctionService {
   }
 
   getItems() {
-        // add authorization header with jwt token
-        let headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.signinService.token.token }); // insert tokern in the requests
-        let options = { headers: headers };
+    // add authorization header with jwt token
+    let headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.signinService.token.token }); // insert tokern in the requests
+    let options = { headers: headers };
 
-        // get users from api
-        return this.http.get<any[]>('/api/items', options)
-              .pipe(
-                catchError(this.handleError) // handle error function will return an empty Item[] anf log the error
-              );
-    }
+    // get users from api
+    return this.http.get<any[]>('/api/items', options).pipe(catchError(this.handleError));
+  }
 
-   getUsers() {
-        // add authorization header with jwt token
-        let headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.signinService.token.token }); // insert tokern in the requests
-        const options = { headers: headers };
+  getUsers() {
+    // add authorization header with jwt token
+    let headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.signinService.token.token }); // insert tokern in the requests
+    const options = { headers: headers };
 
-        // get users from api
-        return this.http.get<any[]>('/api/users', options)
-              .pipe(
-                catchError(this.handleError) // handle error function will return an empty Item[] anf log the error
-              );
-   }
+    // get users from api
+    return this.http.get<any[]>('/api/users', options).pipe(catchError(this.handleError));
+  }
 
   removeItem (item: any) {
     console.log("auctiob service removeItem -> Removing an item.");
     let headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.signinService.token.token }); // insert tokern in the requests
     let options = { headers: headers };
 
-    return this.http.post<any>(this.removeItemUrl, item, options)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http.post<any>(this.removeItemUrl, item, options).pipe(catchError(this.handleError));
   }
 
-     /**
+  placeBid (item: any, bidAmount: number) {
+    console.log("auction service placeBid -> Placing a bid.");
+    let headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.signinService.token.token }); // insert tokern in the requests
+    let options = { headers: headers };
+
+    return this.http.post<any>('/api/placebid', { item: item, bidAmount: bidAmount }, options).pipe(catchError(this.handleError));
+  }
+
+  /**
    * Handle Http operation that failed.
    */
-   private handleError (error: HttpErrorResponse) {
+  private handleError (error: HttpErrorResponse) {
     let errMsg:string;
     if (error.error instanceof ErrorEvent) {
     // A client-side or network error occurred. Handle it accordingly.
@@ -69,6 +69,6 @@ export class AuctionService {
       console.error(errMsg);
     }
     return throwError(()=> new Error (errMsg));
-    };
+  };
 
 }

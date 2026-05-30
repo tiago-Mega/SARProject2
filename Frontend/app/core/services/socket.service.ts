@@ -66,11 +66,15 @@ export class SocketService {
    * @param Eventname The name of the event to listen for
    * @returns Observable that emits when the event occurs
    */
-  getEvent(Eventname: string): Observable<any> {
+  getEvent(eventName: string): Observable<any> {
     return new Observable(observer => {
-      this.socket.on(Eventname, (data: any) => {
-        observer.next(data);
-      });
+      const handler = (data: any) => observer.next(data);
+      this.socket.on(eventName, handler);
+
+      // Teardown logic — runs when Angular unsubscribes
+      return () => {
+        this.socket.off(eventName, handler);
+      };
     });
   }
 }
