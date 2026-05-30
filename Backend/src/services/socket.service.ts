@@ -1,6 +1,8 @@
 import * as jwt from 'jsonwebtoken';
+
 import { Server, Socket } from 'socket.io';
 import config from '../config/config';
+import Item from '../models/item';
 
 class SocketService {
   private io: Server | null = null;
@@ -90,10 +92,35 @@ class SocketService {
    */
   private startAuctionTimer(): void {
     // Timer function to decrement remaining time 
-    this.intervalId = setInterval(() => {
-      //  update item times here
-      // add actual database operations
+    this.intervalId = setInterval(async () => {
+      if (!this.io) return;
+      try {
+        const activeItems = await Item.find({ sold: false, remainingtime: { $gt: 0 } });
+        for (const item of activeItems) {
+          item.remainingtime -= 1;
+          if (item.remainingtime <= 0) {
+            item.remainingtime = 0;
+            item.sold = true;
+          }
+          await item.save();
+          this.io.emit('item:update', item);
+        }
+      } catch (err) {
+        console.error('Timer error:', err);
+      }
     }, 1000);
+  }
+
+  /**
+   * Broadcast new bid update to all clients
+   */
+  public broadcastBidUpdate(updatedItem: any): void {
+    if (this.io) {
+      for (const socketID of this.socketIDbyUsername.values()) {
+        this.io.to(socketID).emit('item:update', updatedItem);
+        this.io.to(socketID).emit('bid:update', updatedItem);
+      }
+    }
   }
 
   /**
