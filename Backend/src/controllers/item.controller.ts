@@ -80,9 +80,13 @@ export const placeBid = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const item = await Item.findOne({ _id: itemId, sold: false });
+    const item = await Item.findOne({ _id: itemId});
     if (!item) {
-      res.status(404).json({ message: 'Item not found or auction closed' });
+      res.status(404).json({ message: 'Item not found ' });
+      return;
+    }
+    if(item.sold) {
+      res.status(400).json({ message: 'Item has already been sold' });
       return;
     }
     if (item.remainingtime <= 0) {
@@ -98,12 +102,34 @@ export const placeBid = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    item.currentbid = amount;
-    item.wininguser = username;
-    await item.save();
+    // Attempt to atomically update the bid if it still meets the criteria
+    const updated = await Item.findOneAndUpdate(
+      {
+        _id: itemId,
+        sold: false,
+        remainingtime: { $gt: 0 },
+        owner: { $ne: username },
+        currentbid: { $lt: amount }   // The atomic guard: bid must beat current
+      },
+      {
+        $set: { currentbid: amount, wininguser: username }
+      },
+      { new: true } // Return the updated document
+    );
 
-    socketService.broadcastBidUpdate(item);
-    res.status(200).json(item);
+    // If no document was updated, it means the bid was outbid by someone else in the meantime
+    if (!updated) {
+      // Re-fetch to return the latest bid so the client can see what beat them
+      const latest = await Item.findById(itemId);
+      res.status(409).json({
+        message: `Bid was outbid. Current highest bid is ${latest?.currentbid ?? 'unknown'}`,
+        currentbid: latest?.currentbid
+      });
+      return;
+    }
+
+    socketService.broadcastBidUpdate(updated);
+    res.status(200).json(updated);
   } catch (error) {
     res.status(500).json({ message: 'Error placing bid', error });
   }
