@@ -15,12 +15,16 @@ export const createItem = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    const durationSeconds = Number(remainingtime);
+
     const item = new Item({
-      description, currentbid, remainingtime,
+      description, currentbid, 
+      remainingtime: durationSeconds,
       buynow: buynow || 0,
       owner,
       wininguser: '',
-      sold: false
+      sold: false,
+      endsAt: new Date(Date.now() + durationSeconds * 1000)
     });
     const saved = await item.save();
     socketService.broadcastNewItem(saved);

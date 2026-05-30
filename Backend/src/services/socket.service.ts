@@ -74,14 +74,23 @@ class SocketService {
     this.intervalId = setInterval(async () => {
       if (!this.io) return;
       try {
-        const activeItems = await Item.find({ sold: false, remainingtime: { $gt: 0 } });
-        for (const item of activeItems) {
-          item.remainingtime -= 1;
-          if (item.remainingtime <= 0) {
-            item.remainingtime = 0;
-            item.sold = true;
+        const activeItems = await Item.find({ sold: false, endsAt: { $lte: new Date() } });
+
+        if (activeItems.length === 0) return;
+
+        await Item.updateMany(
+          {
+            sold: false,
+            endsAt: { $lte: new Date() }
+          },
+          {
+            $set: { sold: true, remainingtime: 0 }
           }
-          await item.save();
+        );
+
+        for (const item of activeItems) {
+          item.sold = true;
+          item.remainingtime = 0;
           this.io.emit('item:update', item);
         }
       } catch (err) {
