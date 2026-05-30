@@ -2,13 +2,13 @@
 
 Scaffold project for the SAR course MEAN stack assignment.
 
-This README is the main student entry point. You should be able to start, implement, and validate the project from this page.
+This README is the main student entry point. You should be able to start, implement, and validate the project from this page. It also contains the minimum implementation objectives and a list of supplementary features to target for higher grades (17+).
 
 ## Navigation
 
-- Student onboarding details: [STUDENT_GUIDE.md](STUDENT_GUIDE.md)
-- Backend workflow details: [Backend/DEVELOPMENT.md](Backend/DEVELOPMENT.md)
 - System architecture reference: [ARCHITECTURE.md](ARCHITECTURE.md)
+- Backend development workflow: [Backend/DEVELOPMENT.md](Backend/DEVELOPMENT.md)
+- Frontend development workflow: [Frontend/DEVELOPMENT.md](Frontend/DEVELOPMENT.md)
 
 ## Project Context
 
@@ -24,7 +24,7 @@ The codebase is already scaffolded. Your work is to complete and improve core fe
 
 ## Learning Goals
 
-By completing this project, students should demonstrate:
+By completing this project, students should learn:
 
 1. Full-stack feature implementation across Angular and Express.
 2. Type-safe development using TypeScript in frontend and backend.
@@ -86,17 +86,70 @@ Open two terminals in the container:
 npm --prefix Backend run dev
 ```
 
-2. Frontend app
+2. Frontend app (watch mode — rebuilds automatically on file changes)
 
 ```bash
 npm start
 ```
 
+Wait for the message `Application bundle generation complete` before opening the browser. This means the initial build is ready and the backend can serve it.
+
+### After You Change Code
+
+1. If you change backend code in `Backend/src/`, keep `npm --prefix Backend run dev` running. It reloads automatically.
+2. If you change frontend code in `Frontend/`, keep `npm start` running. Angular detects changes, rebuilds to the `dist/` folder, and prints `Application bundle generation complete`. Then **hard-refresh the browser** (`Ctrl+Shift+R`) to load the updated files.
+3. You do not need to restart `npm start` after saving frontend files — the watcher handles it.
+4. Restart only when changing dependencies (`package.json`) or startup/environment configuration.
+
+### If Rebuild or Recompile Errors Occur
+
+1. Read the first real error message in the failing terminal. Ignore repeated stack lines at first.
+2. If backend failed, restart backend dev server:
+
+```bash
+npm --prefix Backend run dev
+```
+
+3. If frontend failed, restart the frontend watch build:
+
+```bash
+npm start
+```
+
+4. If you changed dependencies, run `npm install` in the affected project and restart that server.
+5. If you changed `.env` or startup configuration, restart both servers.
+6. Before submitting, always run checks:
+
+```bash
+npm --prefix Backend run lint
+npm --prefix Backend run build
+npm test
+```
+
 Application endpoints:
 
-- Frontend: http://localhost:4200
-- Backend HTTP: http://localhost:3000
-- Backend HTTPS: https://localhost:3043
+- Main app URL (recommended): https://localhost:3043
+- HTTP redirect entry point: http://localhost:3000
+- Frontend dev server (optional): http://localhost:4200
+
+### What Each Application Endpoint Is For
+
+1. Backend HTTPS (`https://localhost:3043`)
+
+- This is the main URL students should open in the browser.
+- The backend serves the Angular app from `dist/auction-sar` when available.
+
+2. Backend HTTP (`http://localhost:3000`)
+
+- Redirect entry point to HTTPS.
+- You can open it, but it will redirect to `https://localhost:3043`.
+
+3. Frontend dev server (`http://localhost:4200`)
+
+- Optional URL used only if you specifically run Angular dev-server workflows.
+- Not required for normal student usage in this project setup.
+
+In normal development for this project, open `https://localhost:3043`.
 
 ## Recommended Delivery Checklist
 
