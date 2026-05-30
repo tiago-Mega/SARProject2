@@ -14,6 +14,7 @@ import { Item, User, Chat, Marker } from '../../../../core/models';
   styleUrls: ['./auction.component.css'],
   standalone: false
 })
+
 export class AuctionComponent implements OnInit {
   items: Item[]; //array of items to store the items.
   users: User[];
@@ -92,15 +93,12 @@ ngOnInit(): void {
   //subscribe to the incoming websocket events
 
   //example how to subscribe to the server side regularly (each second) items:update event
-      const updateItemsSubscription = this.socketservice.getEvent("update:items")
-                      .subscribe(
-                        data =>{
-                          let receiveddata = data as Item[];
-                            if (this.items){
-                              this.items = receiveddata;
-                            }
-                        }
-                      );
+  const updateItemsSubscription = this.socketservice.getEvent("update:items").subscribe(
+    data =>{ 
+      let receiveddata = data as Item[]; 
+      if (this.items){ this.items = receiveddata;}
+    }
+  );
 
   //subscribe to the new user logged in event that must be sent from the server when a client logs in 
   //subscribe to the user logged out event that must be sent from the server when a client logs out 
@@ -159,14 +157,14 @@ ngOnInit(): void {
    }
 
    //function called when the buy now button is pressed.
-
-   buyNow(){
+  buyNow(){
    	this.bidForm.setValue({              /// sets the field value to the buy now value of the selected item
    		bid: this.selectedItem.buynow
    	});
    	this.message= this.userName + " please press the Submit Bid button to procced with the Buy now order.";
-   }
-//function called when the remove item button is pressed.
+  }
+
+  //function called when the remove item button is pressed.
   removeItem() {
   //use an HTTP call to the API to remove an item using the auction service.
   }
