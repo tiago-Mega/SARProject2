@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
 // User interface defining the document structure
 export interface IUser extends Document {
@@ -16,7 +16,7 @@ const UserSchema = new Schema({
   name: String,
   email: String,
   username: String,
-  password: String,
+  password: { type: String, select: false },
   islogged: Boolean,
   latitude: Number,
   longitude: Number

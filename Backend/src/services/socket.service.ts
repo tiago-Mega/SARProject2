@@ -112,38 +112,36 @@ class SocketService {
   }
 
   /**
-   * Broadcast new bid update to all clients
+   * Broadcast new item to all clients
+   * @param item The new item to broadcast
+   */
+  public broadcastNewItem(item: any): void {
+    if (this.io) this.io.emit('new:item', item);
+  }
+
+  /**
+   * Broadcast item removal to all clients
+   * @param itemId ID of the removed item
+   */
+  public broadcastRemoveItem(itemId: string): void {
+    if (this.io) this.io.emit('remove:item', { id: itemId });
+  }
+
+  /**
+   * Broadcast bid update to all clients
+   * @param updatedItem The item with updated bid information
    */
   public broadcastBidUpdate(updatedItem: any): void {
-    if (this.io) {
-      for (const socketID of this.socketIDbyUsername.values()) {
-        this.io.to(socketID).emit('item:update', updatedItem);
-        this.io.to(socketID).emit('bid:update', updatedItem);
-      }
-    }
+    if (this.io) this.io.emit('item:update', updatedItem);
   }
 
   /**
-   * Broadcast new logged-in user to all clients
+   * Broadcast user status change to all clients
+   * @param username The username of the user whose status changed
+   * @param online Whether the user is now online or offline
    */
-  public newLoggedUserBroadcast(newUser: any): void {
-    if (this.io) {
-      for (const socketID of this.socketIDbyUsername.values()) {
-        this.io.to(socketID).emit('new:item', newUser);
-      }
-    }
-  }
-
-  /**
-   * Broadcast user logged-out event to all clients
-   */
-  public userLoggedOutBroadcast(loggedOutUser: any): void {
-    console.log('RemoveItemBroadcast -> ', loggedOutUser);
-    if (this.io) {
-      for (const socketID of this.socketIDbyUsername.values()) {
-        this.io.to(socketID).emit('remove:item', loggedOutUser);
-      }
-    }
+  public broadcastUserStatus(username: string, online: boolean): void {
+    if (this.io) this.io.emit('user:status', { username, online });
   }
 
   /**

@@ -1,10 +1,11 @@
+import * as bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
-import * as bcrypt from 'bcrypt';
 
-import socketService from '../services/socket.service';
 import config from '../config/config';
+import BlacklistedToken from '../models/blacklistedToken';
 import User from '../models/user';
+import socketService from '../services/socket.service';
 
 /**
  * Handle user authentication
@@ -34,7 +35,7 @@ export const authenticate = async (req: Request, res: Response): Promise<void> =
       config.jwtSecret,
       { expiresIn: '24h' }
     );
-    socketService.newLoggedUserBroadcast({ username: user.username });
+    socketService.broadcastUserStatus(user.username, true);
     res.status(200).json({ username: user.username, token });
   } catch (error) {
     res.status(500).json({ message: 'Authentication failed', error });
@@ -89,8 +90,20 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
 export const logout = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username } = req.body;
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+
+    if (token) {
+      // Decode to get expiry without verifying (already verified by middleware)
+      const decoded = jwt.decode(token) as { exp?: number };
+      const expiresAt = decoded?.exp
+        ? new Date(decoded.exp * 1000)
+        : new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await BlacklistedToken.create({ token, expiresAt });
+    }
+
     await User.findOneAndUpdate({ username }, { islogged: false });
-    socketService.userLoggedOutBroadcast({ username });
+    socketService.broadcastUserStatus(username, false);
     res.status(200).json({ message: 'Logged out successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Logout failed', error });
