@@ -17,7 +17,15 @@ const ItemSchema = new Schema({
   description: { type: String, required: true, trim: true },
   currentbid: { type: Number, required: true, min: 0 },
   remainingtime: { type: Number, required: true, min: 0 },
-  buynow: { type: Number, default: 0, min: 0 },
+  buynow: { type: Number, default: 0, min: 0, validate: {
+    // buynow must be higher than the starting bid if provided
+    validator: function (this: IItem, value: number) {
+      if (value === 0) return true;            // 0 means disabled
+        return value > this.currentbid;
+      },
+      message: 'Buy Now price must be greater than the starting bid'
+    }
+  },
   wininguser: { type: String, default: '' },
   sold: { type: Boolean, default: false },
   owner: { type: String, required: true },

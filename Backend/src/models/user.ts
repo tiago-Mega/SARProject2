@@ -19,7 +19,8 @@ const UserSchema = new Schema({
   password: { type: String, select: false },
   islogged: Boolean,
   latitude: Number,
-  longitude: Number
+  longitude: Number,
+  timestamps: { createdAt: true, updatedAt: true }
 });
 
 // Export the model

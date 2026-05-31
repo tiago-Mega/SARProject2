@@ -15,6 +15,11 @@ export const createItem = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    if (buynow && buynow > 0 && buynow <= currentbid) {
+      res.status(400).json({ message: 'Buy Now price must be greater than the starting bid' });
+      return;
+    }
+
     const durationSeconds = Number(remainingtime);
 
     const item = new Item({
@@ -136,5 +141,78 @@ export const placeBid = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json(updated);
   } catch (error) {
     res.status(500).json({ message: 'Error placing bid', error });
+  }
+};
+
+/**
+ * Buy Now — instantly closes the auction at the fixed buynow price
+ */
+export const buyNow = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { itemId } = req.body;
+    const username = (req as any).auth.username;
+
+    if (!itemId) {
+      res.status(400).json({ message: 'itemId is required' });
+      return;
+    }
+
+    const existing = await Item.findById(itemId);
+    if (!existing) {
+      res.status(404).json({ message: 'Item not found' });
+      return;
+    }
+    if (existing.sold) {
+      res.status(400).json({ message: 'Auction is already closed' });
+      return;
+    }
+    if (existing.remainingtime <= 0) {
+      res.status(400).json({ message: 'Auction has already ended' });
+      return;
+    }
+    if (existing.owner === username) {
+      res.status(400).json({ message: 'Owner cannot buy their own item' });
+      return;
+    }
+    if (!existing.buynow || existing.buynow <= 0) {
+      res.status(400).json({ message: 'This item does not have a Buy Now price' });
+      return;
+    }
+
+    // Atomic close — only succeeds if the item is still open
+    const purchased = await Item.findOneAndUpdate(
+      {
+        _id: itemId,
+        sold: false,
+        remainingtime: { $gt: 0 },
+        buynow: { $gt: 0 },
+        owner: { $ne: username }
+      },
+      {
+        $set: {
+          sold: true,
+          wininguser: username,
+          currentbid: existing.buynow,
+          remainingtime: 0
+        }
+      },
+      { new: true }
+    );
+
+    if (!purchased) {
+      res.status(409).json({ message: 'Buy Now failed — auction may have just closed' });
+      return;
+    }
+
+    // Broadcast the item as closed to all connected clients
+    socketService.broadcastBidUpdate(purchased);
+    socketService.broadcastRemoveItem(purchased._id as string);
+
+    res.status(200).json({
+      message: `Item purchased successfully for ${existing.buynow}`,
+      item: purchased
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error processing Buy Now', error });
   }
 };
